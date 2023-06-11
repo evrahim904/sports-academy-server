@@ -55,11 +55,21 @@ async function run() {
 
       res.send({ token })
     })
+    // verifyAdmin
+    const verifyAdmin = async (req,res,next)=>{
+      const email = req.decoded.email;
+      const query = {email: email}
+      const user = usersCollection.findOne(query);
+      if(user?.role !== 'admin'){
+        return res.status(403).send({error: true, message:'forbidden access'})
+      }
+      next()
+    }
 
 
 
     // users collection apis
-    app.get('/users', async (req, res) => {
+    app.get('/users',verifyJWT, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result)
     })
@@ -75,23 +85,75 @@ async function run() {
       const result = await usersCollection.insertOne(user)
       res.send(result)
     })
+    
     app.patch('/users/admin/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) }
       const updateDoc = {
         $set: {
-          role: 'admin'
+          role: 'admin',
         },
+        
       };
       const result = await usersCollection.updateOne(filter, updateDoc)
       res.send(result)
     })
+    app.patch('/users/instructor/:id', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updateDoc = {
+        $set: {
+          role: 'instructor',
+        },
+        
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc)
+      res.send(result)
+    })
+
+   app.get('/users/admin/:email', verifyJWT, async(req, res)=>{
+    const email = req.params.email;
+    if(req.params.email !== email){
+      res.send({admin:false})
+    }
+    const query = {email: email}
+    const user = await usersCollection.findOne(query);
+    const result = {admin: user?.role === 'admin'}
+    res.send(result)
+   })
+   
+   app.get('/users/instructor/:email', async(req, res)=>{
+    const email = req.params.email;
+    if(req.params.email !== email){
+      res.send({instructor: false})
+    }
+    const query = {email: email}
+    const user = await usersCollection.findOne(query);
+    const result = {instructor: user?.role === 'instructor'}
+    res.send(result)
+   })
 
 
 
     // classes section apis
     app.get('/classes', async (req, res) => {
       const result = await classCollection.find().toArray()
+      res.send(result)
+    })
+    app.post('/classes',async (req, res) =>{
+      const newItem = req.body;
+      const result = await classCollection.insertOne(newItem)
+      res.send(result)
+
+    })
+    app.patch('/classes/:id', async(req, res)=>{
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) }
+      const updateDoc = {
+         $inc: { availableSeats: -1 },
+        
+      };
+      const result = await classCollection.updateOne(filter, updateDoc)
       res.send(result)
     })
 
