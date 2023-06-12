@@ -67,8 +67,10 @@ async function run() {
     })
     // payment related apis
   
-  
-
+   app.get('/payment', verifyJWT , async (req, res)=>{
+    const result = await paymentCollection.find().toArray()
+    res.send(result)
+   })
 
     app.post('/payment', verifyJWT, async (req, res) => {
       const payment = req.body;
@@ -182,6 +184,20 @@ async function run() {
 
 
     // classes section apis
+    
+
+    app.get('/classes', async (req, res) => {
+      const email = req.query.email;
+      if (email) {
+        const result = await classCollection.find({ email: email }).toArray();
+        res.send(result);
+      } else {
+        // If no email is provided, return all classes
+        const result = await classCollection.find().toArray();
+        res.send(result);
+      }
+    });
+
     app.get('/classes', async (req, res) => {
       const result = await classCollection.find().toArray()
       res.send(result)
