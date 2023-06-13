@@ -53,16 +53,16 @@ async function run() {
 
 
     // payment method
-    app.post('/create-payment-intent',verifyJWT, async (req, res)=>{
-      const {price} = req.body;
-      if(price){
-        const amount = parseFloat(price)*100;
+    app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      if (price) {
+        const amount = parseFloat(price) * 100;
         const paymentIntent = await stripe.paymentIntents.create({
           amount: amount,
           currency: 'usd',
           payment_method_types: ['card']
         });
-        res.send({clientSecret: paymentIntent.client_secret})
+        res.send({ clientSecret: paymentIntent.client_secret })
       }
     })
     // payment related apis
@@ -76,50 +76,56 @@ async function run() {
         res.send(result);
       }
     });
-  
-  //  app.get('/payment', verifyJWT , async (req, res)=>{
-  //   const result = await paymentCollection.find().toArray()
-  //   res.send(result)
-  //  })
+
+    //  app.get('/payment', verifyJWT , async (req, res)=>{
+    //   const result = await paymentCollection.find().toArray()
+    //   res.send(result)
+    //  })
 
     app.post('/payment', verifyJWT, async (req, res) => {
       const payment = req.body;
       const result = await paymentCollection.insertOne(payment);
-        
+
+
       const filter = { _id: new ObjectId(payment.classId) };
-          const updateDoc = {
-            $inc: { availableSeats: -1 },
+      const updateDoc = {
+        $inc: {
+          availableSeats: -1,
+          enrolled: 1
+        },
+      };
+      const updateResult = await classCollection.updateOne(filter, updateDoc);
       
-          };
-          const updateResult = await classCollection.updateOne(filter,updateDoc);
+
+
 
       const query = { _id: new ObjectId(payment.cartId) };
       const deleteResult = await cartCollection.deleteOne(query);
-  
-      res.send({ result, deleteResult,updateResult });
-  });
+
+      res.send({ result, deleteResult, updateResult });
+    });
 
 
 
-//   app.patch('/payment', verifyJWT, async (req, res) => {
-//     const payment = req.body;
+    //   app.patch('/payment', verifyJWT, async (req, res) => {
+    //     const payment = req.body;
 
-//     const filter = { _id: new ObjectId(payment.classId) };
-//     const updateDoc = {
-//       $inc: { availableSeats: -1 },
+    //     const filter = { _id: new ObjectId(payment.classId) };
+    //     const updateDoc = {
+    //       $inc: { availableSeats: -1 },
 
-//     };
-//     const updateResult = await classCollection.updateOne(filter,updateDoc);
+    //     };
+    //     const updateResult = await classCollection.updateOne(filter,updateDoc);
 
-//     res.send({ updateResult });
-// });
-  
-
+    //     res.send({ updateResult });
+    // });
 
 
 
-   
-   
+
+
+
+
     app.post('/jwt', (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
@@ -142,7 +148,7 @@ async function run() {
 
 
     // users collection apis
-    app.get('/users', verifyJWT,verifyAdmin, async (req, res) => {
+    app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result)
     })
@@ -209,7 +215,7 @@ async function run() {
 
 
     // classes section apis
-    
+
 
     app.get('/classes', async (req, res) => {
       const email = req.query.email;
@@ -265,7 +271,7 @@ async function run() {
           status: 'denied'
         }
       };
-    
+
       const result = await classCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
@@ -278,12 +284,12 @@ async function run() {
           feedback: req.body.feedback,
         }
       };
-    
+
       const result = await classCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    
-    
+
+
 
 
 
@@ -293,8 +299,6 @@ async function run() {
       const result = await instructorCollection.find().toArray()
       res.send(result)
     })
-
-
     // cart collection apis
     app.get('/carts', verifyJWT, async (req, res) => {
       const email = req.query.email;
