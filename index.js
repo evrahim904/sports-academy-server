@@ -66,33 +66,58 @@ async function run() {
       }
     })
     // payment related apis
+    app.get('/payment', verifyJWT, async (req, res) => {
+      const email = req.query.email;
+      if (email) {
+        const result = await paymentCollection.find({ email: email }).toArray();
+        res.send(result);
+      } else {
+        const result = await paymentCollection.find().toArray();
+        res.send(result);
+      }
+    });
   
-   app.get('/payment', verifyJWT , async (req, res)=>{
-    const result = await paymentCollection.find().toArray()
-    res.send(result)
-   })
+  //  app.get('/payment', verifyJWT , async (req, res)=>{
+  //   const result = await paymentCollection.find().toArray()
+  //   res.send(result)
+  //  })
 
     app.post('/payment', verifyJWT, async (req, res) => {
       const payment = req.body;
       const result = await paymentCollection.insertOne(payment);
-  
+        
+      const filter = { _id: new ObjectId(payment.classId) };
+          const updateDoc = {
+            $inc: { availableSeats: -1 },
+      
+          };
+          const updateResult = await classCollection.updateOne(filter,updateDoc);
+
       const query = { _id: new ObjectId(payment.cartId) };
       const deleteResult = await cartCollection.deleteOne(query);
   
-      res.send({ result, deleteResult });
+      res.send({ result, deleteResult,updateResult });
   });
+
+
+
+//   app.patch('/payment', verifyJWT, async (req, res) => {
+//     const payment = req.body;
+
+//     const filter = { _id: new ObjectId(payment.classId) };
+//     const updateDoc = {
+//       $inc: { availableSeats: -1 },
+
+//     };
+//     const updateResult = await classCollection.updateOne(filter,updateDoc);
+
+//     res.send({ updateResult });
+// });
   
 
-    // app.post('/payment',verifyJWT, async (req, res)=>{
-    //   const payment = req.body;
-    //   const result = await paymentCollection.insertOne(payment)
-      
-    //   const query = {_id:{$in: payment.cartId.map(id => new ObjectId(id))}}
-    //   const deleteResult = await cartCollection.deleteOne(query)
-    //   res.send({result,deleteResult})
-    // })
 
-    //  verifyJWT
+
+
    
    
     app.post('/jwt', (req, res) => {
@@ -117,7 +142,7 @@ async function run() {
 
 
     // users collection apis
-    app.get('/users', verifyJWT, async (req, res) => {
+    app.get('/users', verifyJWT,verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result)
     })
@@ -192,7 +217,6 @@ async function run() {
         const result = await classCollection.find({ email: email }).toArray();
         res.send(result);
       } else {
-        // If no email is provided, return all classes
         const result = await classCollection.find().toArray();
         res.send(result);
       }
@@ -202,6 +226,7 @@ async function run() {
       const result = await classCollection.find().toArray()
       res.send(result)
     })
+
     app.post('/classes', async (req, res) => {
       const newItem = req.body;
       const result = await classCollection.insertOne(newItem)
@@ -244,7 +269,7 @@ async function run() {
       const result = await classCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    
+
     app.patch('/classes/feedback/:id', async (req, res) => {
       const id = req.params.id;
       const filter = { _id: new ObjectId(id) };
