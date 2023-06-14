@@ -145,10 +145,28 @@ async function run() {
       next()
     }
 
+    // verifyInstructor
+    const verifyInstructor = async (req, res, next) => {
+      const email = req.decoded.email;
+      const query = { email: email };
+      
+      try {
+        const user = await usersCollection.findOne(query);
+    
+        if (!user || user.role !== 'instructor') {
+          return res.status(403).send({ error: true, message: 'forbidden access' });
+        }
+        
+        next();
+      } catch (error) {
+        return res.status(500).send({ error: true, message: 'Internal Server Error' });
+      }
+    };
+    
 
 
     // users collection apis
-    app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
+    app.get('/users', verifyJWT, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result)
     })
@@ -157,12 +175,14 @@ async function run() {
       const user = req.body;
       const query = { email: user.email }
       const existingUser = await usersCollection.findOne(query);
+       
       if (existingUser) {
         return res.send({ message: 'user is already existing' });
       }
 
       const result = await usersCollection.insertOne(user)
-      res.send(result)
+      const instructor = await instructorCollection.insertOne(user)
+      res.send({result,instructor})
     })
 
     app.patch('/users/admin/:id', async (req, res) => {
@@ -187,7 +207,8 @@ async function run() {
 
       };
       const result = await usersCollection.updateOne(filter, updateDoc)
-      res.send(result)
+      const instructor = await instructorCollection.updateOne(filter, updateDoc)
+      res.send({result,instructor})
     })
 
     app.get('/users/admin/:email', verifyJWT, async (req, res) => {
@@ -229,7 +250,13 @@ async function run() {
     });
 
     app.get('/classes', async (req, res) => {
-      const result = await classCollection.find().toArray()
+      const query  = {};
+      const options = {
+        sort: { "availableSeats": -1 },
+      };
+
+
+      const result = await classCollection.find(options,query).toArray()
       res.send(result)
     })
 
