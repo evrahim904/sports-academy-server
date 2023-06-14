@@ -107,22 +107,6 @@ async function run() {
 
 
 
-    //   app.patch('/payment', verifyJWT, async (req, res) => {
-    //     const payment = req.body;
-
-    //     const filter = { _id: new ObjectId(payment.classId) };
-    //     const updateDoc = {
-    //       $inc: { availableSeats: -1 },
-
-    //     };
-    //     const updateResult = await classCollection.updateOne(filter,updateDoc);
-
-    //     res.send({ updateResult });
-    // });
-
-
-
-
 
 
 
