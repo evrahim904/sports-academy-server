@@ -104,9 +104,6 @@ async function run() {
 
 
 
-
-
-
     app.post('/jwt', (req, res) => {
       const user = req.body;
       const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
@@ -142,7 +139,7 @@ async function run() {
 
     }
 
-    // verifyInstructor
+    // verifyInstructor 
     const verifyInstructor = async (req, res, next) => {
       const email = req.decoded.email;
       const query = { email: email };
@@ -320,7 +317,7 @@ async function run() {
 
 
 
-    // instructors section  apis
+    // instructors collection  apis
     app.get('/instructors', async (req, res) => {
       const result = await instructorCollection.find().toArray()
       res.send(result)
