@@ -77,10 +77,7 @@ async function run() {
       }
     });
 
-    //  app.get('/payment', verifyJWT , async (req, res)=>{
-    //   const result = await paymentCollection.find().toArray()
-    //   res.send(result)
-    //  })
+    
 
     app.post('/payment', verifyJWT, async (req, res) => {
       const payment = req.body;
@@ -120,13 +117,29 @@ async function run() {
 
     // verifyAdmin
     const verifyAdmin = async (req, res, next) => {
+      // const email = req.decoded.email;
+      // const query = { email: email }
+      // const user = usersCollection.findOne(query);
+      // if (user?.role !== 'admin') {
+      //   return res.status(403).send({ error: true, message: 'forbidden access' })
+      // }
+      // next()
+
       const email = req.decoded.email;
-      const query = { email: email }
-      const user = usersCollection.findOne(query);
-      if (user?.role !== 'admin') {
-        return res.status(403).send({ error: true, message: 'forbidden access' })
+      const query = { email: email };
+      
+      try {
+        const user = await usersCollection.findOne(query);
+    
+        if (!user || user.role !== 'admin') {
+          return res.status(403).send({ error: true, message: 'forbidden access' });
+        }
+        
+        next();
+      } catch (error) {
+        return res.status(500).send({ error: true, message: 'Internal Server Error' });
       }
-      next()
+
     }
 
     // verifyInstructor
@@ -150,7 +163,7 @@ async function run() {
 
 
     // users collection apis
-    app.get('/users', verifyJWT, async (req, res) => {
+    app.get('/users', verifyJWT,verifyAdmin, async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result)
     })
@@ -208,12 +221,15 @@ async function run() {
 
     app.get('/users/instructor/:email', async (req, res) => {
       const email = req.params.email;
+      
       if (req.params.email !== email) {
         res.send({ instructor: false })
       }
       const query = { email: email }
       const user = await usersCollection.findOne(query);
+      
       const result = { instructor: user?.role === 'instructor' }
+     
       res.send(result)
     })
 
@@ -238,7 +254,6 @@ async function run() {
       const options = {
         sort: { "availableSeats": -1 },
       };
-
 
       const result = await classCollection.find(options,query).toArray()
       res.send(result)
